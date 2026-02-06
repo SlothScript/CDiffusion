@@ -1,0 +1,5 @@
+torch
+tokenizers
+datasets
+# install numpy 1.x
+numpy<2
