@@ -35,8 +35,8 @@ elif model_type == "2b":
 
 # Training
 batch_size = 32
-learning_rate = 1e-4
-warmup_steps = 10_000
+learning_rate = 1e-3
+warmup_steps = 1_000
 max_steps = 100_000
 save_every = 5_000
 

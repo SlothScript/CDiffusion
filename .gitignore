@@ -8,9 +8,12 @@
 /data/corpus_clean.txt.gz
 # this one isn't actually that big (2.2MB), but it'll keep my project size down a lot still
 /model/tokenizer.json
+tokenizer.json
 /model/checkpoints/*
 /model/*.log
 /model/__pycache__/*
+training.log
+project.zip
 
 # you don't get to see that
 /venv/*

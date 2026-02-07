@@ -2,6 +2,8 @@ import torch
 from torch.utils.data import Dataset
 from tokenizers import Tokenizer
 import random
+import numpy as np
+from pathlib import Path
 
 class MLMDataset(Dataset):
     def __init__(
@@ -12,14 +14,10 @@ class MLMDataset(Dataset):
         mask_rate_min=0.15,
         mask_rate_max=0.85,
         ignore_index=-100,
-        max_data=0,
+        cache_dir=None,
     ):
         self.tokenizer = Tokenizer.from_file(tokenizer_path)
-        if max_data == 0:
-            self.texts = texts
-        else:
-            self.texts = texts[0:max_data]
-            print(self.texts)
+        self.texts = texts
         self.max_seq_len = max_seq_len
         self.mask_rate_min = mask_rate_min
         self.mask_rate_max = mask_rate_max
@@ -34,15 +32,22 @@ class MLMDataset(Dataset):
         }
 
         self.vocab_size = self.tokenizer.get_vocab_size()
+        
+        # Pre-tokenize all texts
+        self.tokenized_data = self._preprocess_texts()
+
+    def _preprocess_texts(self):
+        """Tokenize all texts once at initialization."""
+        tokenized = []
+        for text in self.texts:
+            ids = self.tokenizer.encode(text).ids[: self.max_seq_len]
+            if len(ids) < self.max_seq_len:
+                ids += [self.pad_id] * (self.max_seq_len - len(ids))
+            tokenized.append(torch.tensor(ids, dtype=torch.long))
+        return tokenized
 
     def __len__(self):
         return len(self.texts)
-
-    def _encode(self, text):
-        ids = self.tokenizer.encode(text).ids[: self.max_seq_len]
-        if len(ids) < self.max_seq_len:
-            ids += [self.pad_id] * (self.max_seq_len - len(ids))
-        return torch.tensor(ids, dtype=torch.long)
 
     def _mask_tokens(self, input_ids):
         labels = input_ids.clone()
@@ -70,7 +75,7 @@ class MLMDataset(Dataset):
         return input_ids, labels
 
     def __getitem__(self, idx):
-        input_ids = self._encode(self.texts[idx])
+        input_ids = self.tokenized_data[idx].clone()
         input_ids, labels = self._mask_tokens(input_ids)
 
         return {

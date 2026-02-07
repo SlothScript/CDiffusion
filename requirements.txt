@@ -1,5 +1,5 @@
 torch
 tokenizers
-datasets
+datasets==3.5.1
 # install numpy 1.x
 numpy<2

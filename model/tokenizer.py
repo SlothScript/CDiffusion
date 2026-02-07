@@ -1,10 +1,20 @@
 import gzip
+import os
+from pathlib import Path
 from tokenizers import Tokenizer
 from tokenizers.models import BPE
 from tokenizers.trainers import BpeTrainer
 from tokenizers.decoders import BPEDecoder
 
-CORPUS = "../data/corpus_clean.txt.gz"
+# Use DATA_DIR environment variable or default to /data, with fallback to relative path
+data_dir = Path(os.environ.get("DATA_DIR", "/data"))
+
+# If /data is not accessible, use path relative to this script
+if not data_dir.exists():
+    script_dir = Path(__file__).parent
+    data_dir = script_dir.parent / "data"
+
+CORPUS = data_dir / "corpus_clean.txt.gz"
 
 tokenizer = Tokenizer(BPE())
 trainer = BpeTrainer(
@@ -21,7 +31,9 @@ with gzip.open(CORPUS, "rt") as f:
 
     tokenizer.train_from_iterator(training_corpus, trainer)
 
-tokenizer.save("tokenizer.json")
+# Save to model directory
+model_dir = Path(__file__).parent
+tokenizer.save(str(model_dir / "tokenizer.json"))
 
 
 # -- Test tokenizer --

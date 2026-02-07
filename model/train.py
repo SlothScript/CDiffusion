@@ -1,7 +1,7 @@
 import gzip
 import logging
+import os
 from pathlib import Path
-from datetime import datetime
 import time
 
 import torch
@@ -12,6 +12,15 @@ import numpy as np
 import config
 from model import MLMModel  # type: ignore
 from data import MLMDataset  # type: ignore
+
+
+# Determine data directory - use /data if available, otherwise use path relative to script
+def get_data_dir():
+    data_dir = Path(os.environ.get("DATA_DIR", "/data"))
+    if not data_dir.exists():
+        script_dir = Path(__file__).parent
+        data_dir = script_dir.parent / "data"
+    return data_dir
 
 
 # ---------------- Logging ----------------
@@ -181,7 +190,8 @@ def load_data(path, sample_size=None):
 def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    texts = load_data("../data/corpus_clean.txt.gz")
+    data_dir = get_data_dir()
+    texts = load_data(str(data_dir / "corpus_clean.txt.gz"))
 
     dataset = MLMDataset(
         texts=texts,
@@ -189,15 +199,16 @@ def main():
         max_seq_len=config.max_seq_len,
         mask_rate_min=config.mask_rate_min,
         mask_rate_max=config.mask_rate_max,
-        max_data = 1
     )
 
     loader = DataLoader(
         dataset,
         batch_size=config.batch_size,
         shuffle=True,
-        num_workers=2,
+        num_workers=0,
         pin_memory=torch.cuda.is_available(),
+        prefetch_factor=2,
+        persistent_workers=False,
     )
 
     model = MLMModel(
